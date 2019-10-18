@@ -1,0 +1,2 @@
+# cpu-usage-monitor
+shell script to monitor cpu usage, by reading /proc
