@@ -9,6 +9,15 @@ FILE="cpu_usage.log"
 # number of cpu cores
 CPU_NUM=`cat /proc/stat | grep 'cpu[0-9]' -c` 
 
+if [ ! -f $FILE ]; then
+    echo "CPU number : $CPU_NUM" >> $FILE
+    printf "[timestamps]" >> $FILE
+    for i in `seq 1 $CPU_NUM`; do
+        printf "%2d " 0 >> $FILE
+    done
+    echo >> $FILE
+fi
+
 while true; do
     # array of cpus
     startTotalSum=($(cat /proc/stat | grep "cpu[0-9]" | awk '{print $2+$3+$4+$5+$6+$7+$8}' | tr "\n" " "))
