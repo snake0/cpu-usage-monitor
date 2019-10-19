@@ -2,7 +2,7 @@
 # only works in zsh
 
 # time between reading /proc/stat
-INTERVAL=0.25
+INTERVAL=1
 # log file path
 FILE="cpu_usage.log"
 
@@ -18,7 +18,7 @@ if [ ! -f $FILE ]; then
     echo >> $FILE
 fi
 
-while true; do
+while :; do
     # array of cpus
     cpuInfo=$(cat /proc/stat | grep "cpu[0-9]")
     startTotalSum=($(echo ${cpuInfo} | awk '{print $2+$3+$4+$5+$6+$7+$8}' | tr "\n" " "))
