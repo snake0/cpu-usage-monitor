@@ -2,7 +2,7 @@
 # only works in zsh
 
 # time between reading /proc/stat
-INTERVAL=1
+INTERVAL=0.25
 # log file path
 FILE="cpu_usage.log"
 
@@ -10,31 +10,31 @@ FILE="cpu_usage.log"
 CPU_NUM=`cat /proc/stat | grep 'cpu[0-9]' -c` 
 
 if [ ! -f $FILE ]; then
-    echo "CPU number : $CPU_NUM" >> $FILE
-    printf "[timestamps]" >> $FILE
+    echo "CPU NUMBER  : $CPU_NUM" >> $FILE
+    printf "[TIMESTAMPS] " >> $FILE
     for i in `seq 1 $CPU_NUM`; do
-        printf "%2d " 0 >> $FILE
+        printf "c%d " $i  >> $FILE
     done
     echo >> $FILE
 fi
 
 while true; do
     # array of cpus
-    startTotalSum=($(cat /proc/stat | grep "cpu[0-9]" | awk '{print $2+$3+$4+$5+$6+$7+$8}' | tr "\n" " "))
-    startIdleSum=($(cat /proc/stat | grep "cpu[0-9]" | awk '{print $5}' | tr "\n" " "))
+    cpuInfo=$(cat /proc/stat | grep "cpu[0-9]")
+    startTotalSum=($(echo ${cpuInfo} | awk '{print $2+$3+$4+$5+$6+$7+$8}' | tr "\n" " "))
+    startIdleSum=($(echo ${cpuInfo} | awk '{print $5}' | tr "\n" " "))
 
     sleep $INTERVAL
 
     # array of cpus
-    stopTotalSum=($(cat /proc/stat | grep "cpu[0-9]" | awk '{print $2+$3+$4+$5+$6+$7+$8}' | tr "\n" " "))
-    stopIdleSum=($(cat /proc/stat | grep "cpu[0-9]" | awk '{print $5}' | tr "\n" " "))
+    cpuInfo=$(cat /proc/stat | grep "cpu[0-9]")
+    stopTotalSum=($(echo ${cpuInfo} | awk '{print $2+$3+$4+$5+$6+$7+$8}' | tr "\n" " "))
+    stopIdleSum=($(echo ${cpuInfo} | awk '{print $5}' | tr "\n" " "))
 
     for i in `seq 1 $CPU_NUM`; do
         total=$((stopTotalSum[i]-startTotalSum[i]))
         idle=$((stopIdleSum[i]-startIdleSum[i]))
-        occupied=$((total-idle))
-        occupied_normal=$((occupied*100))
-        percentage[$i]=$((occupied_normal/total))
+        percentage[$i]=$((100*(total-idle)/total))
     done
 
     time=$(date +%s)
