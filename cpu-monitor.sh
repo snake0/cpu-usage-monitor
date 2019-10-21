@@ -1,5 +1,5 @@
-#!/bin/zsh
-# only works in zsh
+#!/bin/bash
+# only works in bash
 
 # time between reading /proc/stat
 INTERVAL=1
@@ -7,40 +7,51 @@ INTERVAL=1
 FILE="cpu_usage.log"
 
 # number of cpu cores
-CPU_NUM=`cat /proc/stat | grep 'cpu[0-9]' -c` 
+CPU_NUM=$(cat /proc/stat | grep -E 'cpu[0-9]+' | wc -l)
 
-if [ ! -f $FILE ]; then
-    echo "CPU NUMBER  : $CPU_NUM" >> $FILE
-    printf "[TIMESTAMPS] " >> $FILE
-    for i in `seq 1 $CPU_NUM`; do
-        printf "c%d " $i  >> $FILE
+declare -a startTotalSum
+declare -a startIdleSum
+declare -a stopTotalSum
+declare -a stopIdleSum
+declare -a percentage
+
+while true
+do
+    for ((i=0;i<CPU_NUM;i++))
+    do
+        startTotalSum[$i]=$(cat /proc/stat | grep "cpu$i" | awk \
+            '{print $2+$3+$4+$5+$6+$7+$8}')
+        startIdleSum[$i]=$(cat /proc/stat | grep "cpu$i" | awk \
+            '{print $5}')
     done
-    echo >> $FILE
-fi
-
-while :; do
-    # array of cpus
-    cpuInfo=$(cat /proc/stat | grep "cpu[0-9]")
-    startTotalSum=($(echo ${cpuInfo} | awk '{print $2+$3+$4+$5+$6+$7+$8}' | tr "\n" " "))
-    startIdleSum=($(echo ${cpuInfo} | awk '{print $5}' | tr "\n" " "))
 
     sleep $INTERVAL
 
-    # array of cpus
-    cpuInfo=$(cat /proc/stat | grep "cpu[0-9]")
-    stopTotalSum=($(echo ${cpuInfo} | awk '{print $2+$3+$4+$5+$6+$7+$8}' | tr "\n" " "))
-    stopIdleSum=($(echo ${cpuInfo} | awk '{print $5}' | tr "\n" " "))
+    for ((i=0;i<CPU_NUM;i++))
+    do
+        stopTotalSum[$i]=$(cat /proc/stat | grep "cpu$i" | awk \
+            '{print $2+$3+$4+$5+$6+$7+$8}')
+        stopIdleSum[$i]=$(cat /proc/stat | grep "cpu$i" | awk \
+            '{print $5}')
+    done
 
-    for i in `seq 1 $CPU_NUM`; do
+    for ((i=0;i<CPU_NUM;i++))
+    do
         total=$((stopTotalSum[i]-startTotalSum[i]))
         idle=$((stopIdleSum[i]-startIdleSum[i]))
-        percentage[$i]=$((100*(total-idle)/total))
+        if [ $total -eq 0 ]
+        then
+            percentage[$i]=0
+        else
+            percentage[$i]=$((100*(total-idle)/total))
+        fi
     done
 
     time=$(date +%s)
-    printf "[$time] " >> $FILE
-    for p in $percentage; do
-        printf "%2d " $p >> $FILE
+    printf "$time " >> $FILE
+    for ((i=0;i<CPU_NUM;i++))
+    do
+        printf "%2d " ${percentage[$i]} >> $FILE
     done
     echo >> $FILE
 done
