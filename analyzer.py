@@ -4,18 +4,20 @@ import os
 import sys
 import math
 
-# file descriptor of log files
-logFiles = []
-# minimum time elapsed among all log files
 # data beyond that time will be discarded
 minTimeElapsed = sys.maxsize
-# raw data get from log files, len(allData) == len(logFiles)
+
+# file descriptor of log files
+logFiles = []
+# raw data get from log files
 allData = []
 # number of cpu cores, set in `getAllData`
-cpunum = 0
+cpunum = []
 
 
-def loadLogFiles():
+# len(allData) == len(logFiles) == len(cpunum)
+
+def openLogFiles():
     global logFiles
     for i in range(1, len(sys.argv)):
         if not os.path.isfile(sys.argv[i]):
@@ -38,16 +40,16 @@ def getAllData():
         data = []
         lines = f.readlines()
         if len(lines) == 0:
-            print("Empty log file.")
-            continue
+            print("Empty log file. exit")
+            sys.exit()
 
         for line in lines:
             words = line.split()
             percentage = map(int, words[1:])
             data.append((int(words[0]), percentage))
-        allData.append(data)
 
-    cpunum = len(allData[0][0][1])
+        allData.append(data)
+        cpunum.append(len(data[0][1]))
 
 
 def getMinTimeElapsed():
@@ -58,12 +60,15 @@ def getMinTimeElapsed():
             minTimeElapsed = timeElapsed
 
 
-def fillInData(arr1, arr2):
-    global cpunum
+def fillInData(line1, line2):
     data = []
-    for i in range(cpunum):
-        data.append((arr1[i] + arr2[i]) / 2)
-    return data
+    if not len(line1[1]) == len(line2[1]):
+        print("Fill in data failed. exit")
+        sys.exit()
+
+    for i in range(len(line1[1])):
+        data.append((line1[1][i] + line2[1][i]) // 2)
+    return (line1[0] + line2[0]) // 2, data
 
 
 def cleanseData():
@@ -80,53 +85,62 @@ def cleanseData():
             if data[j][0] > endTime:
                 break
             if data[j][0] == prevTime + 2:
-                newData.append(
-                    (prevTime + 1, fillInData(data[j - 1][1], data[j][1])))
+                newData.append(fillInData(data[j - 1], data[j]))
             newData.append(data[j])
             prevTime = data[j][0]
 
         allData[i] = newData
 
 
+# calculate gini coefficient of arr
+def gini(arr):
+    # values must be positive
+    _min = min(arr)
+    if _min < 0:
+        for i in range(len(arr)):
+            arr[i] -= _min
+    # values cannot be 0
+    for i in range(len(arr)):
+        arr[i] += 0.0000001
+
+    # array must be sorted
+    arr.sort()
+    _len = len(arr)
+    _sum_b = sum(arr)
+    _sum_a = 0
+    for i in range(len(arr)):
+        _sum_a += 1.0 * (2 * i - _len + 1) * arr[i]
+    return _sum_a / _sum_b
+
+
 def getResult():
     global allData, cpunum
+    # average percentage of each cpu
+    avgs = []
+    for i in range(len(allData)):
+        data = allData[i]
+        for j in range(cpunum[i]):
+            _sum = 0
+            for line in data:
+                _sum += line[1][j]
+            avgs.append(1.0 * _sum / len(data))
 
-    # array of data from all cpus
-    avg, stddev, gini = [], [], []
+    print("Average percentage of each cpu:")
+    print("  " + str(avgs))
+    avg = 1.0 * sum(avgs) / len(avgs)
+    print("Average percentage of all %d cpus:" % (sum(cpunum)))
+    print("  " + str(avg) + "%")
 
-    for i in range(cpunum):
-        avg.append(0)
-        stddev.append(0)
-        gini.append(0)
-
-    logLen = 0
-    for data in allData:
-        logLen += len(data)
-
-    # calculate average usage percentage of all cpus
-    for i in range(cpunum):
-        _avg = 0
-        for j in range(len(allData)):
-            for k in range(len(allData[j])):
-                _avg += allData[j][k][1][i]
-        _avg /= logLen
-        avg[i] = _avg
-
-    for i in range(cpunum):
-        _dev = 0
-        for j in range(len(allData)):
-            for k in range(len(allData[j])):
-                diff = allData[j][k][1][i] - avg[i]
-                _dev += diff * diff
-        _dev /= logLen
-        stddev[i] = int(math.sqrt(_dev))
-
-    # Gini coefficient not implemented
-
-    print("average for all cpus:")
-    print("  " + str(avg))
-    print("stddev for all cpus:")
+    stddev = 0
+    for i in range(len(avgs)):
+        diff = avgs[i] - avg
+        stddev += diff * diff
+    stddev /= sum(cpunum)
+    stddev = math.sqrt(stddev)
+    print("Stddev of percentage of all %d cpus:" % (sum(cpunum)))
     print("  " + str(stddev))
+    print("Gini coefficient of percentage of all cpus:")
+    print("  " + str(gini(avgs)))
 
 
 def printData():
@@ -137,7 +151,7 @@ def printData():
 
 
 def main():
-    loadLogFiles()
+    openLogFiles()
     getAllData()
     getMinTimeElapsed()
     cleanseData()
