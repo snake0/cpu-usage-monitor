@@ -44,6 +44,8 @@ def getAllData():
             sys.exit()
 
         for line in lines:
+            if not line.strip():
+                continue
             words = line.split()
             percentage = map(int, words[1:])
             data.append((int(words[0]), percentage))
@@ -125,8 +127,8 @@ def getResult():
                 _sum += line[1][j]
             avgs.append(1.0 * _sum / len(data))
 
-    print("Average percentage of each cpu:")
-    print("  " + str(avgs))
+    # print("Average percentage of each cpu:")
+    # print("  " + str(avgs))
     avg = 1.0 * sum(avgs) / len(avgs)
     print("Average percentage of all %d cpus:" % (sum(cpunum)))
     print("  " + str(avg) + "%")
