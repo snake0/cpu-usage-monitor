@@ -112,7 +112,7 @@ def gini(arr):
     _sum_a = 0
     for i in range(len(arr)):
         _sum_a += 1.0 * (2 * i - _len + 1) * arr[i]
-    return _sum_a / _sum_b
+    return _sum_a / _sum_b / _len
 
 
 def getResult():
