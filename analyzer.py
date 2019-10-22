@@ -1,7 +1,8 @@
 #!/usr/bin/python
+# only works in python2
 import os
-import re
 import sys
+import math
 
 # file descriptor of log files
 logFiles = []
@@ -80,7 +81,7 @@ def cleanseData():
                 break
             if data[j][0] == prevTime + 2:
                 newData.append(
-                    (prevTime + 1, fillInData(data[j-1][1], data[j][1])))
+                    (prevTime + 1, fillInData(data[j - 1][1], data[j][1])))
             newData.append(data[j])
             prevTime = data[j][0]
 
@@ -89,21 +90,43 @@ def cleanseData():
 
 def getResult():
     global allData, cpunum
-    avg, stddev, gini = [], [], [] # array of cpus
+
+    # array of data from all cpus
+    avg, stddev, gini = [], [], []
 
     for i in range(cpunum):
-        avg.append(0)    
-        stddev.append(0)    
-        gini.append(0)    
-    
+        avg.append(0)
+        stddev.append(0)
+        gini.append(0)
+
     logLen = 0
     for data in allData:
         logLen += len(data)
-        
+
+    # calculate average usage percentage of all cpus
     for i in range(cpunum):
+        _avg = 0
         for j in range(len(allData)):
             for k in range(len(allData[j])):
-                _avg
+                _avg += allData[j][k][1][i]
+        _avg /= logLen
+        avg[i] = _avg
+
+    for i in range(cpunum):
+        _dev = 0
+        for j in range(len(allData)):
+            for k in range(len(allData[j])):
+                diff = allData[j][k][1][i] - avg[i]
+                _dev += diff * diff
+        _dev /= logLen
+        stddev[i] = int(math.sqrt(_dev))
+
+    # Gini coefficient not implemented
+
+    print("average for all cpus:")
+    print("  " + str(avg))
+    print("stddev for all cpus:")
+    print("  " + str(stddev))
 
 
 def printData():
@@ -118,7 +141,7 @@ def main():
     getAllData()
     getMinTimeElapsed()
     cleanseData()
-    printData()
+    # printData()
     getResult()
     finishUp()
 
