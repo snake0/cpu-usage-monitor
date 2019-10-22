@@ -4,7 +4,7 @@
 # time between reading /proc/stat
 INTERVAL=1
 # log file path
-FILE="cpu_usage.log"
+FILE=$(date +%s)"-cpu_usage.log"
 
 # number of cpu cores
 CPU_NUM=$(cat /proc/stat | grep -E 'cpu[0-9]+' | wc -l)

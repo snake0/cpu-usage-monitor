@@ -20,14 +20,9 @@ log = {}
 
 
 def finish_up(signum, frame):
-    oldLog = {}
-    if os.path.isfile(FILE):
-        oldLog = json.load(open(FILE))
-
     global log
-    f = open(FILE, 'w')
-    newLog = dict(oldLog, **log)
-    json.dump(newLog, f, sort_keys=True, indent=2, separators=(", ", ": "))
+    f = open(str(int(time.time())) + "-" + FILE, 'w')
+    json.dump(log, f, sort_keys=True, indent=2)
     f.close()
     sys.exit()
 
@@ -61,7 +56,7 @@ def main():
             else:
                 percentage.append(0)
 
-        log[int(time.time())] = str(percentage)
+        log[int(time.time())] = percentage
 
 
 if __name__ == "__main__":
