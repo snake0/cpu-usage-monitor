@@ -115,6 +115,25 @@ def gini(arr):
     return _sum_a / _sum_b / _len
 
 
+def avg(arr):
+    return 0 if len(arr) == 0 else 1.0 * sum(arr) / len(arr)
+
+
+def stddev(arr):
+    if len(arr) == 0:
+        return 0
+
+    _stddev = 0
+    _avg = avg(arr)
+    for i in range(len(arr)):
+        diff = arr[i] - _avg
+        _stddev += diff * diff
+
+    _stddev /= len(arr)
+    _stddev = math.sqrt(_stddev)
+    return _stddev
+
+
 def getResult():
     global allData, cpunum
     # average percentage of each cpu
@@ -129,18 +148,10 @@ def getResult():
 
     # print("Average percentage of each cpu:")
     # print("  " + str(avgs))
-    avg = 1.0 * sum(avgs) / len(avgs)
     print("Average percentage of all %d cpus:" % (sum(cpunum)))
-    print("  " + str(avg) + "%")
-
-    stddev = 0
-    for i in range(len(avgs)):
-        diff = avgs[i] - avg
-        stddev += diff * diff
-    stddev /= sum(cpunum)
-    stddev = math.sqrt(stddev)
+    print("  " + str(avg(avgs)) + "%")
     print("Stddev of percentage of all %d cpus:" % (sum(cpunum)))
-    print("  " + str(stddev))
+    print("  " + str(stddev(avgs)))
     print("Gini coefficient of percentage of all cpus:")
     print("  " + str(gini(avgs)))
 
